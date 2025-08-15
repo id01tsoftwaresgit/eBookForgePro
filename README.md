@@ -1,6 +1,3 @@
-Here’s a clean, professional **README.md** for your GitHub repo **`eBookForgePro`**.
-
-````markdown
 # eBookForgePro
 
 **Version:** 1.0.0  
