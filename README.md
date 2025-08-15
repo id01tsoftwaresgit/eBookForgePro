@@ -1,3 +1,6 @@
+
+<img width="1024" height="1024" alt="ChatGPT Image Aug 15, 2025, 07_39_25 PM" src="https://github.com/user-attachments/assets/103824a1-1a78-49e9-a764-9d00b876a7b9" />
+
 # eBookForgePro
 
 **Version:** 1.0.0  
