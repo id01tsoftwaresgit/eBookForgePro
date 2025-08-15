@@ -1,3 +1,6 @@
+Here’s a clean, professional **README.md** for your GitHub repo **`eBookForgePro`**.
+
+````markdown
 # eBookForgePro
 
 **Version:** 1.0.0  
@@ -43,3 +46,61 @@ Designed for speed, ease of use, and maximum compatibility, eBookForgePro is the
 You can install them all with:
 ```bash
 pip install -r requirements.txt
+````
+
+---
+
+## ⚡ Quick Start
+
+1. **Clone the Repository**
+
+```bash
+git clone https://github.com/id01tsoftwaresgit/eBookForgePro.git
+cd eBookForgePro
+```
+
+2. **Install Dependencies**
+
+```bash
+pip install -r requirements.txt
+```
+
+3. **Run the Application**
+
+```bash
+python ebookforgepro.py
+```
+
+4. **Select Your Project**
+
+   * Add your manuscript.
+   * Configure metadata.
+   * Generate cover.
+   * Click **Compile eBook**.
+
+---
+
+## 🛠 Building an Executable (.exe)
+
+If you want to create a Windows executable:
+
+```bash
+pyinstaller --noconsole --onefile --name "eBookForgePro" --icon "assets/icon.ico" ebookforgepro.py
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## 🌐 Links
+
+* **Website**: [https://www.id01t.ca](https://www.id01t.ca)
+* **GitHub**: [https://github.com/id01tsoftwaresgit/eBookForgePro](https://github.com/id01tsoftwaresgit/eBookForgePro)
+* **Contact**: [itechinfomtl@gmail.com](mailto:itechinfomtl@gmail.com)
+
+```
+
