@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+src/ebookforgepro/__init__.py
+src/ebookforgepro/ai.py
+src/ebookforgepro/app.py
+src/ebookforgepro/cli.py
+src/ebookforgepro/core.py
+src/ebookforgepro/dependencies.py
+src/ebookforgepro/exporters.py
+src/ebookforgepro/uploaders.py
+src/ebookforgepro.egg-info/PKG-INFO
+src/ebookforgepro.egg-info/SOURCES.txt
+src/ebookforgepro.egg-info/dependency_links.txt
+src/ebookforgepro.egg-info/entry_points.txt
+src/ebookforgepro.egg-info/requires.txt
+src/ebookforgepro.egg-info/top_level.txt

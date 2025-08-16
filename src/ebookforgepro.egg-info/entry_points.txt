@@ -1,0 +1,3 @@
+[console_scripts]
+ebookforgepro = ebookforgepro.cli:main
+ebookforgepro-check = ebookforgepro.cli:run_cli_test
