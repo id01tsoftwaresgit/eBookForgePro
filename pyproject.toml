@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ebookforgepro"
+version = "1.3.0"
+authors = [
+  { name="Guillaume Lessard", email="itechinfomtl@gmail.com" },
+]
+description = "A professional, all-in-one Python application for creating, compiling, and managing eBooks with AI-powered features."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Text Processing",
+    "Topic :: Multimedia :: Graphics :: Presentation",
+]
+dependencies = [
+    "requests",
+    "reportlab",
+    "ebooklib",
+    "markdown2",
+    "python-docx",
+    "ttkbootstrap",
+    "paramiko", # Optional, but good to include for full functionality
+]
+
+[project.urls]
+"Homepage" = "https://github.com/id01tsoftwaresgit/eBookForgePro"
+"Bug Tracker" = "https://github.com/id01tsoftwaresgit/eBookForgePro/issues"
+
+[project.scripts]
+ebookforgepro = "ebookforgepro.cli:main"
+ebookforgepro-check = "ebookforgepro.cli:run_cli_test"
+
+[project.optional-dependencies]
+local_llm = ["llama-cpp-python"]

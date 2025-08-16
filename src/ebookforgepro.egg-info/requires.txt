@@ -1,0 +1,10 @@
+requests
+reportlab
+ebooklib
+markdown2
+python-docx
+ttkbootstrap
+paramiko
+
+[local_llm]
+llama-cpp-python
