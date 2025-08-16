@@ -196,22 +196,57 @@ class GUI(tb.Window):
         self.editor = tk.Text(p, wrap="word"); self.editor.grid(row=0, column=0, sticky="nsew")
 
     def on_generate(self):
-        prov = self.prov_var.get(); prompt = self.prompt_text.get("1.0", "end").strip()
-        self.toggle_controls(True); self.editor.delete("1.0", "end")
-        if prov == "Puter (Free Claude)":
-            self.engine.set_provider(PuterAdapter())
-            threading.Thread(target=self.engine.generate, kwargs={"prompt": prompt, "gui_ref": self}, daemon=True).start()
+        provider_name = self.prov_var.get()
+        prompt = self.prompt_text.get("1.0", "end").strip()
+
+        self.toggle_controls(True)
+        self.editor.delete("1.0", "end")
+
+        if provider_name == "Puter (Free Claude)":
+            # This must run on the main thread and will block the GUI.
+            try:
+                adapter = PuterAdapter()
+                self.engine.set_provider(adapter)
+                # The adapter's generate method now calls finalize_generation via the API class
+                self.engine.generate(prompt=prompt, gui_ref=self)
+            except Exception as e:
+                messagebox.showerror("Puter Error", f"Failed to launch Puter window:\n{e}")
+                self.finalize_generation() # Ensure UI is re-enabled on error
         else:
-            api_key = self.api_keys.get(prov);
-            if not api_key: messagebox.showerror("API Key Error", f"Key for {prov} not found."); self.toggle_controls(False); return
-            self.engine.set_provider(AnthropicAdapter(api_key=api_key)); self.abort.clear()
+            # Other providers run in a background thread
+            api_key = self.api_keys.get(provider_name)
+            if not api_key:
+                messagebox.showerror("API Key Error", f"API key for {provider_name} not found.")
+                self.toggle_controls(False)
+                return
+
+            adapter_map = {"Anthropic": AnthropicAdapter}
+            adapter_class = adapter_map.get(provider_name)
+            if not adapter_class:
+                messagebox.showerror("Error", f"Provider '{provider_name}' is not implemented.")
+                self.toggle_controls(False)
+                return
+
+            self.engine.set_provider(adapter_class(api_key=api_key))
+            self.abort.clear()
+
             def task():
-                output = []; gen = self.engine.generate(prompt=prompt)
-                for chunk in gen:
-                    if self.abort.is_set(): break
-                    output.append(chunk); self.after(0, self.append_to_editor, chunk)
-                if not self.abort.is_set(): self.cache.add("".join(output), prov, "default")
-                self.after(0, self.finalize_generation)
+                full_output = []
+                try:
+                    stream_generator = self.engine.generate(prompt=prompt, system_prompt="You are a helpful assistant.")
+                    for chunk in stream_generator:
+                        if self.abort.is_set():
+                            break
+                        full_output.append(chunk)
+                        self.after(0, self.append_to_editor, chunk)
+
+                    if not self.abort.is_set():
+                        self.cache.add(prompt, "".join(full_output), provider_name, "default")
+                except Exception as e:
+                    self.after(0, messagebox.showerror, "Generation Failed", str(e))
+                finally:
+                    self.after(0, self.finalize_generation)
+
             threading.Thread(target=task, daemon=True).start()
 
     def on_apply_template(self):
