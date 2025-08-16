@@ -39,3 +39,4 @@ ebookforgepro-check = "ebookforgepro.cli:run_cli_test"
 [project.optional-dependencies]
 local_llm = ["llama-cpp-python"]
 music = ["torch", "transformers", "scipy"]
+image = ["diffusers", "accelerate"]

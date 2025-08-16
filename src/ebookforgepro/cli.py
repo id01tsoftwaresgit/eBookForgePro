@@ -2,11 +2,13 @@ import sys
 import traceback
 
 import unittest.mock
+from PIL import Image
 from .app import App
 from .core import scaffold_from_meta, autonomous_generation
 from .exporters import Exporter
 from .ai import Expander
 from .music import MusicGenerator
+from .image import ImageGenerator
 from .core import PROJECT_DIR
 import re
 
@@ -65,6 +67,22 @@ def run_cli_test():
                 print("Test 4 (Music Generation Module): PASSED")
 
         print("\nAll CLI self-checks finished successfully.")
+
+        # Test 5: Image Generation module
+        with unittest.mock.patch('ebookforgepro.image.ImageGenerator.generate') as mock_generate:
+            with unittest.mock.patch('ebookforgepro.image.ImageGenerator.save_image') as mock_save:
+                mock_image = Image.new('RGB', (10, 10), color = 'red')
+                mock_generate.return_value = mock_image
+                mock_save.return_value = "mock_image_path.png"
+
+                image_gen = ImageGenerator()
+                img = image_gen.generate("test prompt")
+                path = image_gen.save_image(img, "test prompt")
+
+                mock_generate.assert_called_once_with("test prompt")
+                mock_save.assert_called_once_with(mock_image, "test prompt")
+                assert path == "mock_image_path.png"
+                print("Test 5 (Image Generation Module): PASSED")
 
     except Exception as e:
         print(f"CLI self-check error: {e}", file=sys.stderr)
