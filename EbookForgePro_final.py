@@ -166,7 +166,7 @@ class GUI(tb.Window):
         v_f = ttk.LabelFrame(p, text="Variables", padding=5); v_f.grid(row=0, column=0, sticky="ew", pady=5)
         v_f.columnconfigure(1, weight=1)
         self.vars = {"title": tk.StringVar(value="My Book"), "subtitle": tk.StringVar(), "audience": tk.StringVar(value="Experts"), "tone": tk.StringVar(value="Formal"), "keywords": tk.StringVar(), "topic": tk.StringVar()}
-        ttk.Label(v_f, text="Title:").grid(row=0, col=0); ttk.Entry(v_f, textvariable=self.vars["title"]).grid(row=0, col=1, sticky="ew")
+        ttk.Label(v_f, text="Title:").grid(row=0, column=0); ttk.Entry(v_f, textvariable=self.vars["title"]).grid(row=0, column=1, sticky="ew")
         pr_f = ttk.LabelFrame(p, text="Provider", padding=5); pr_f.grid(row=1, column=0, sticky="ew", pady=5)
         pr_f.columnconfigure(0, weight=1)
         self.prov_var = tk.StringVar(value="Puter (Free Claude)"); ttk.Combobox(pr_f, textvariable=self.prov_var, values=["Puter (Free Claude)", "Anthropic"], state="readonly").grid(row=0, column=0, sticky="ew")
