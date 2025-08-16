@@ -30,6 +30,7 @@ import tempfile
 import threading
 import datetime
 import webbrowser
+import random
 from pathlib import Path
 
 APP_NAME = "EebookForgePro" if False else "EbookForgePro"  # (keep string literal stable for packers)
@@ -114,6 +115,46 @@ if not ICO_PATH.exists():
         pass
 
 # ----------------
+# Training Data
+# ----------------
+TRAINING_DATA = {
+  "Digital Marketing Strategy": {
+    "introductions": [
+      "This chapter will delve into the core principles of creating a successful digital marketing strategy. We will explore how to define your audience, set clear objectives, and choose the right channels to reach your goals.",
+      "Building a digital marketing plan is the first step towards achieving online success. In this section, we'll cover the foundational elements of a robust strategy, from market research to performance measurement.",
+      "A well-crafted digital marketing strategy acts as a roadmap for your business's online presence. This chapter will guide you through the process of creating a comprehensive plan that aligns with your business objectives."
+    ],
+    "core_concepts": [
+      "Understanding your target audience is paramount. Develop detailed buyer personas to represent your ideal customers. Consider their demographics, psychographics, pain points, and online behavior. This will inform every aspect of your strategy.",
+      "Setting SMART (Specific, Measurable, Achievable, Relevant, Time-bound) goals is crucial for success. Instead of a vague goal like 'increase online sales,' aim for something like 'achieve a 15% increase in e-commerce revenue in the next quarter.'",
+      "The marketing funnel (Awareness, Consideration, Conversion, Loyalty) is a key concept. Your strategy should include tactics for each stage to guide potential customers on their journey from discovery to purchase and beyond.",
+      "Content is the fuel for your digital marketing engine. A content strategy should outline what type of content to create (blog posts, videos, infographics), for which audience, on which platform, and with what objective.",
+      "Search Engine Optimization (SEO) is the practice of increasing the quantity and quality of traffic to your website through organic search engine results. It involves keyword research, on-page optimization, and link building.",
+      "Pay-Per-Click (PPC) advertising, such as Google Ads or social media ads, allows you to reach your target audience directly. A successful PPC strategy requires careful keyword selection, compelling ad copy, and landing page optimization.",
+      "Email marketing remains one of the most effective channels for nurturing leads and retaining customers. Building a subscriber list and sending targeted, valuable content is key to building strong customer relationships.",
+      "Social media marketing involves using platforms like Facebook, Instagram, LinkedIn, and Twitter to build your brand, engage with your audience, and drive traffic to your website. Choose platforms where your target audience is most active."
+    ],
+    "examples": [
+      "For a local bakery, a good SMART goal would be: 'Increase online pre-orders for custom cakes by 25% within the next 6 months by running targeted Facebook ads and improving the website's SEO for local search terms.'",
+      "A B2B software company might create a buyer persona named 'IT Manager Mike,' who is 35-45 years old, values efficiency and data security, and reads industry blogs and LinkedIn articles. Content would then be created to address Mike's specific challenges.",
+      "An example of a content strategy for a fitness apparel brand could be: creating weekly workout videos for YouTube (Awareness), publishing blog posts comparing different types of athletic wear (Consideration), and sending exclusive discount codes to email subscribers (Conversion)."
+    ],
+    "exercises": [
+      "Draft one complete buyer persona for your business. Include their demographics, goals, challenges, and preferred communication channels.",
+      "Define three SMART goals for your next marketing campaign. Ensure each one is specific, measurable, achievable, relevant, and time-bound.",
+      "Outline a basic content calendar for one month. Decide on 4-5 content pieces you will create and the platforms where you will share them.",
+      "Perform basic keyword research for your business. Identify 5-10 keywords that your target audience might use to find your products or services online."
+    ],
+    "takeaways": [
+      "A successful digital marketing strategy is built on a deep understanding of your audience and clear, measurable goals.",
+      "A multi-channel approach that integrates SEO, PPC, content, and email marketing is typically more effective than relying on a single tactic.",
+      "Continuously measure your results and be prepared to adapt your strategy based on what the data tells you. Digital marketing is not 'set it and forget it'.",
+      "High-quality, valuable content is the cornerstone of modern marketing. Focus on helping your audience, not just selling to them."
+    ]
+  }
+}
+
+# ----------------
 # Text utilities
 # ----------------
 CLEAN_OPTS = {
@@ -146,8 +187,8 @@ def slugify(s: str) -> str:
 # ------------------------------
 # Offline manuscript generation
 # ------------------------------
-def scaffold_from_meta(title: str, subtitle: str, toc: str, description: str, seed: str = "") -> str:
-    """Generate a robust Markdown manuscript purely offline."""
+def scaffold_from_meta(title: str, subtitle: str, toc: str, description: str, seed: str = "", topic: str = "Digital Marketing Strategy") -> str:
+    """Generate a robust Markdown manuscript using offline training data."""
     title = clean_text(title or "Untitled")
     subtitle = clean_text(subtitle or "")
     description = clean_text(description or "")
@@ -168,26 +209,48 @@ def scaffold_from_meta(title: str, subtitle: str, toc: str, description: str, se
     for i, ch in enumerate(chapters, 1):
         out.append(f"{i}. {ch}")
 
-    seed_short = clean_text(seed)[:2000]
-    for i, ch in enumerate(chapters, 1):
-        out.append(f"\n\n## {i}. {ch}\n")
-        para = textwrap.fill(
-            f"{ch} presents a practical strategy with step-by-step actions and measurable outcomes. "
-            f"Write clearly and prioritize momentum. {seed_short[:300]}",
-            width=92,
-        )
-        chunk = []
-        target_words = 900 if i > 1 else 700
-        while len(" ".join(chunk + [para]).split()) < target_words:
-            chunk.append(para)
+    # Use training data if topic is valid
+    if topic in TRAINING_DATA:
+        td = TRAINING_DATA[topic]
+        for i, ch in enumerate(chapters, 1):
+            out.append(f"\n\n## {i}. {ch}\n")
+            # Introduction
+            out.append(random.choice(td.get("introductions", [""])))
+            # Core concepts
+            concepts = random.sample(td.get("core_concepts", [""]), k=min(3, len(td.get("core_concepts", [""]))))
+            out.extend(["\n", *concepts])
+            # Example
+            out.append(f"\n\n**Example:** {random.choice(td.get('examples', ['']))}")
+            # Exercises
+            out.append("\n\n### Exercises\n")
+            exercises = random.sample(td.get("exercises", [""]), k=min(2, len(td.get("exercises", [""]))))
+            for ex in exercises:
+                out.append(f"1. {ex}")
+            # Key Takeaways
+            out.append("\n\n### Key Takeaways\n")
+            out.append(random.choice(td.get("takeaways", [""])))
+    else:
+        # Fallback to original generic generator
+        seed_short = clean_text(seed)[:2000]
+        for i, ch in enumerate(chapters, 1):
+            out.append(f"\n\n## {i}. {ch}\n")
             para = textwrap.fill(
-                "Add examples, pitfalls, best practices, and a short scenario. "
-                "End with ROI metrics and a week-one action plan.",
+                f"{ch} presents a practical strategy with step-by-step actions and measurable outcomes. "
+                f"Write clearly and prioritize momentum. {seed_short[:300]}",
                 width=92,
             )
-        out.append("\n\n".join(chunk))
-        out.append("\n\n### Exercises\n1. Define 3 KPIs.\n2. Draft a 5-step plan with estimates.\n3. Identify two risks and mitigations.")
-        out.append("\n\n### Key Takeaways\nClarity, outcomes, repeatable systems; prioritize actions that drive ROI.")
+            chunk = []
+            target_words = 900 if i > 1 else 700
+            while len(" ".join(chunk + [para]).split()) < target_words:
+                chunk.append(para)
+                para = textwrap.fill(
+                    "Add examples, pitfalls, best practices, and a short scenario. "
+                    "End with ROI metrics and a week-one action plan.",
+                    width=92,
+                )
+            out.append("\n\n".join(chunk))
+            out.append("\n\n### Exercises\n1. Define 3 KPIs.\n2. Draft a 5-step plan with estimates.\n3. Identify two risks and mitigations.")
+            out.append("\n\n### Key Takeaways\nClarity, outcomes, repeatable systems; prioritize actions that drive ROI.")
 
     return clean_text("\n".join(out))
 
@@ -555,7 +618,15 @@ class App(tb.Window):
         ttk.Label(grid, text="ISBN").grid(row=2, column=0, sticky="w")
         ttk.Entry(grid, textvariable=self.isbn_var).grid(row=2, column=1, sticky="ew")
 
-        ttk.Label(t_meta, text="Description").pack(anchor="w", padx=10)
+        self.topic_var = tk.StringVar()
+        ttk.Label(grid, text="Draft Topic").grid(row=2, column=2, sticky="w")
+        cb = ttk.Combobox(grid, textvariable=self.topic_var, values=list(TRAINING_DATA.keys()))
+        cb.grid(row=2, column=3, sticky="ew")
+        if list(TRAINING_DATA.keys()):
+            cb.current(0)
+
+
+        ttk.Label(t_meta, text="Description").pack(anchor="w", padx=10, pady=(10, 0))
         self.desc_txt = tk.Text(t_meta, height=6, wrap="word")
         self.desc_txt.pack(fill=tk.BOTH, padx=10)
         ttk.Label(t_meta, text="Table of Contents (comma or newline separated)").pack(anchor="w", padx=10, pady=(6, 0))
@@ -730,7 +801,8 @@ class App(tb.Window):
         subtitle = self.subtitle_var.get().strip()
         toc = self.toc_txt.get("1.0", "end").strip()
         desc = self.desc_txt.get("1.0", "end").strip()
-        md = scaffold_from_meta(title, subtitle, toc, desc, seed=self.first_text)
+        topic = self.topic_var.get()
+        md = scaffold_from_meta(title, subtitle, toc, desc, seed=self.first_text, topic=topic)
         self.editor.delete("1.0", "end")
         self.editor.insert("1.0", md)
         messagebox.showinfo(APP_NAME, "Draft generated")
@@ -879,21 +951,69 @@ class App(tb.Window):
     # Diagnostics
     def self_check(self):
         try:
+            # Test 1: Standard exports
             ex = Exporter(PROJECT_DIR)
-            sample = scaffold_from_meta(self.title_var.get() or "Sample Book", self.subtitle_var.get(), "Intro, Core, Finale", "Quick self-test")
-            md = ex.export_md(sample, self.title_var.get() or "Sample Book")
-            ep = ex.export_epub(sample, self.title_var.get() or "Sample Book", self.author_var.get())
-            pdf = ex.export_pdf(sample, self.title_var.get() or "Sample Book", self.author_var.get())
-            self.log(f"Self-check OK\nMD:  {md}\nEPUB: {ep}\nPDF: {pdf}")
-            messagebox.showinfo(APP_NAME, "Self-check completed (MD, EPUB, PDF)")
+            sample = scaffold_from_meta("Sample Book", "", "Intro, Core, Finale", "Quick self-test", topic="Generic")
+            md = ex.export_md(sample, "Sample Book")
+            ep = ex.export_epub(sample, "Sample Book", "Test Author")
+            pdf = ex.export_pdf(sample, "Sample Book", "Test Author")
+            msg = f"Self-check OK\nMD:  {md}\nEPUB: {ep}\nPDF: {pdf}"
+            self.log(msg)
+
+            # Test 2: New dynamic content generation
+            topic = "Digital Marketing Strategy"
+            dyn_sample = scaffold_from_meta("Dynamic Book", "", "SEO,PPC,Email", "Dynamic test", topic=topic)
+            if topic in dyn_sample and "buyer personas" in dyn_sample:
+                dyn_msg = f"Dynamic content generation for topic '{topic}' PASSED."
+                self.log(dyn_msg)
+            else:
+                dyn_msg = f"Dynamic content generation for topic '{topic}' FAILED."
+                self.log(dyn_msg)
+
+            messagebox.showinfo(APP_NAME, "Self-check completed!")
+
         except Exception as e:
-            self.log(f"Self-check error: {e}")
+            self.log(f"Self-check error: {e}\n{traceback.format_exc()}")
             messagebox.showerror(APP_NAME, f"Self-check failed: {e}")
+
+def run_cli_test():
+    """Run tests without GUI"""
+    print("Running CLI self-check...")
+    try:
+        # Test 1: Standard exports
+        ex = Exporter(PROJECT_DIR)
+        sample = scaffold_from_meta("Sample Book", "", "Intro, Core, Finale", "Quick self-test", topic="Generic")
+        md = ex.export_md(sample, "Sample Book")
+        ep = ex.export_epub(sample, "Sample Book", "Test Author")
+        pdf = ex.export_pdf(sample, "Sample Book", "Test Author")
+        print(f"Self-check OK\nMD:  {md}\nEPUB: {ep}\nPDF: {pdf}")
+
+        # Test 2: New dynamic content generation
+        topic = "Digital Marketing Strategy"
+        dyn_sample = scaffold_from_meta("Dynamic Book", "", "SEO,PPC,Email", "Dynamic test", topic=topic)
+        if "buyer personas" in dyn_sample and "SEO" in dyn_sample and "local bakery" in dyn_sample:
+            print(f"Dynamic content generation for topic '{topic}' PASSED.")
+        else:
+            print(f"Dynamic content generation for topic '{topic}' FAILED.")
+            # print(f"Generated sample:\n{dyn_sample}") # for debugging
+            sys.exit(1) # Fail the check
+
+        print("CLI self-check finished successfully.")
+
+    except Exception as e:
+        print(f"CLI self-check error: {e}")
+        traceback.print_exc()
+        sys.exit(1)
+
 
 # ------------------------------
 # Entry
 # ------------------------------
 def main():
+    if "--self-check" in sys.argv:
+        run_cli_test()
+        return
+
     try:
         app = App()
         app.mainloop()
