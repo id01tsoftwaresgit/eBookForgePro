@@ -1,10 +1,12 @@
 import sys
 import traceback
 
+import unittest.mock
 from .app import App
 from .core import scaffold_from_meta, autonomous_generation
 from .exporters import Exporter
 from .ai import Expander
+from .music import MusicGenerator
 from .core import PROJECT_DIR
 import re
 
@@ -44,6 +46,23 @@ def run_cli_test():
         else:
             print("Test 3 (Autonomous Generation Logic): FAILED")
             sys.exit(1)
+
+        # Test 4: Music Generation module
+        with unittest.mock.patch('ebookforgepro.music.MusicGenerator.generate') as mock_generate:
+            with unittest.mock.patch('ebookforgepro.music.MusicGenerator.save_wav') as mock_save:
+                mock_generate.return_value = ("mock_audio_values", 16000)
+                mock_save.return_value = "mock_path.wav"
+
+                # This test is now simpler. We don't need to instantiate the App.
+                # We can call the MusicGenerator directly.
+                music_gen = MusicGenerator()
+                audio, rate = music_gen.generate("test prompt", 5)
+                path = music_gen.save_wav(audio, rate, "test prompt")
+
+                mock_generate.assert_called_once_with("test prompt", 5)
+                mock_save.assert_called_once_with("mock_audio_values", 16000, "test prompt")
+                assert path == "mock_path.wav"
+                print("Test 4 (Music Generation Module): PASSED")
 
         print("\nAll CLI self-checks finished successfully.")
 
