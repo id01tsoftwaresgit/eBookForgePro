@@ -254,6 +254,76 @@ def scaffold_from_meta(title: str, subtitle: str, toc: str, description: str, se
 
     return clean_text("\n".join(out))
 
+
+def autonomous_generation(title: str, subtitle: str, toc: str, description: str, expander_cfg: dict, expander=None) -> str:
+    """Generate a full eBook manuscript chapter by chapter using an AI expander."""
+    if expander is None:
+        expander = Expander(expander_cfg)
+
+    title = clean_text(title or "Untitled")
+    subtitle = clean_text(subtitle or "")
+    description = clean_text(description or "")
+    if "\n" in toc:
+        chapters = [clean_text(x) for x in toc.splitlines() if x.strip()]
+    else:
+        chapters = [clean_text(x) for x in toc.split(",") if x.strip()]
+    if not chapters:
+        return "# Error: Table of Contents is empty. Cannot generate autonomously."
+
+    # --- Construct the book's front matter ---
+    out = [f"# {title}"]
+    if subtitle:
+        out.append(f"\n**{subtitle}**\n")
+    if description:
+        out.append(f"\n> {description}\n")
+
+    # --- Add the Table of Contents ---
+    out.append("\n### Table of Contents\n")
+    full_toc_str = []
+    for i, ch in enumerate(chapters, 1):
+        out.append(f"{i}. {ch}")
+        full_toc_str.append(f"{i}. {ch}")
+
+    full_toc_str = "\n".join(full_toc_str)
+
+    # --- Generate each chapter individually ---
+    for i, ch_title in enumerate(chapters, 1):
+        print(f"[generator] Generating chapter {i}/{len(chapters)}: {ch_title}...")
+
+        # Construct a detailed prompt for the LLM
+        prompt = f"""You are an expert author. Your task is to write a detailed, engaging, and comprehensive chapter for a book.
+
+### Book Details
+- **Title:** {title}
+- **Subtitle:** {subtitle}
+- **Description:** {description}
+- **Full Table of Contents:**
+{full_toc_str}
+
+### Current Task
+You are now writing the chapter titled: **"{ch_title}"**
+
+Please write the full content for this chapter. Aim for a professional, well-structured chapter of at least 1000 words. Ensure the content is informative and aligns with the chapter's title and the book's overall theme.
+
+**Output instructions:**
+- Return only the Markdown content for this single chapter.
+- Start the chapter with a Level 2 Markdown heading (e.g., `## {ch_title}`).
+- Do not include the book title or any other front matter in your response.
+"""
+
+        # Use the expander to generate the chapter content
+        # We pass the detailed prompt as the "manuscript" to be "expanded"
+        generated_content = expander.expand(prompt)
+
+        # Basic cleanup and validation
+        if not generated_content.strip().startswith(f"## {ch_title}"):
+             out.append(f"\n\n## {i}. {ch_title}\n")
+        out.append(generated_content)
+
+    print("[generator] All chapters generated.")
+    return clean_text("\n".join(out))
+
+
 # ------------------------------
 # Optional AI expanders (off by default)
 # ------------------------------
@@ -637,6 +707,7 @@ class App(tb.Window):
         bar.pack(fill=tk.X)
         ttk.Button(bar, text="Load 1st Edition", command=self.load_first).pack(side=tk.LEFT)
         ttk.Button(bar, text="Generate Draft", command=self.gen_draft).pack(side=tk.LEFT, padx=6)
+        ttk.Button(bar, text="AI Generate Full eBook", command=self.do_autonomous_generation, bootstyle="success").pack(side=tk.LEFT, padx=6)
 
         # Compose
         tools = ttk.Frame(t_comp, padding=8)
@@ -721,6 +792,7 @@ class App(tb.Window):
         ttk.Entry(oai, textvariable=self.oai_model).grid(row=1, column=1, sticky="ew")
         ttk.Label(oai, text="Base URL").grid(row=2, column=0, sticky="w")
         ttk.Entry(oai, textvariable=self.oai_base).grid(row=2, column=1, sticky="ew")
+        ttk.Label(oai, text="(For local models like Oobabooga, use the API address, e.g., http://127.0.0.1:5000/v1)").grid(row=3, column=1, sticky="w", padx=2, pady=2)
         oai.columnconfigure(1, weight=1)
 
         gem = ttk.LabelFrame(t_api, text="Gemini", padding=8)
@@ -806,6 +878,40 @@ class App(tb.Window):
         self.editor.delete("1.0", "end")
         self.editor.insert("1.0", md)
         messagebox.showinfo(APP_NAME, "Draft generated")
+
+    def do_autonomous_generation(self):
+        title = self.title_var.get().strip() or "Untitled"
+        subtitle = self.subtitle_var.get().strip()
+        toc = self.toc_txt.get("1.0", "end").strip()
+        desc = self.desc_txt.get("1.0", "end").strip()
+
+        if not toc:
+            messagebox.showwarning(APP_NAME, "Table of Contents is required for autonomous generation.")
+            return
+
+        if self.api_cfg.get("mode") == "offline":
+            messagebox.showwarning(APP_NAME, "AI Generate Full eBook requires an API. Please select one in the APIs tab.")
+            return
+
+        self.config(cursor="wait")
+        self.update_idletasks()
+
+        def task():
+            try:
+                self.log(f"Starting autonomous generation with mode: {self.api_cfg.get('mode')}...")
+                manuscript = autonomous_generation(title, subtitle, toc, desc, self.api_cfg)
+                self.editor.delete("1.0", "end")
+                self.editor.insert("1.0", manuscript)
+                self.log("Autonomous generation complete.")
+                messagebox.showinfo(APP_NAME, "Autonomous eBook generation complete!")
+            except Exception as e:
+                self.log(f"Autonomous generation failed: {e}")
+                messagebox.showerror(APP_NAME, f"Autonomous generation failed: {e}")
+            finally:
+                self.config(cursor="")
+                self.update_idletasks()
+
+        threading.Thread(target=task, daemon=True).start()
 
     # Compose actions
     def do_clean(self):
@@ -986,19 +1092,36 @@ def run_cli_test():
         md = ex.export_md(sample, "Sample Book")
         ep = ex.export_epub(sample, "Sample Book", "Test Author")
         pdf = ex.export_pdf(sample, "Sample Book", "Test Author")
-        print(f"Self-check OK\nMD:  {md}\nEPUB: {ep}\nPDF: {pdf}")
+        print(f"Test 1 (Standard Exports): PASSED")
 
-        # Test 2: New dynamic content generation
+        # Test 2: Dynamic content generation from training data
         topic = "Digital Marketing Strategy"
         dyn_sample = scaffold_from_meta("Dynamic Book", "", "SEO,PPC,Email", "Dynamic test", topic=topic)
         if "buyer personas" in dyn_sample and "SEO" in dyn_sample and "local bakery" in dyn_sample:
-            print(f"Dynamic content generation for topic '{topic}' PASSED.")
+            print(f"Test 2 (Dynamic Draft Generation): PASSED")
         else:
-            print(f"Dynamic content generation for topic '{topic}' FAILED.")
-            # print(f"Generated sample:\n{dyn_sample}") # for debugging
-            sys.exit(1) # Fail the check
+            print(f"Test 2 (Dynamic Draft Generation): FAILED")
+            sys.exit(1)
 
-        print("CLI self-check finished successfully.")
+        # Test 3: Autonomous generation with a mock expander
+        class MockExpander:
+            def expand(self, manuscript: str) -> str:
+                # Find the chapter title in the prompt
+                match = re.search(r'You are now writing the chapter titled: \*\*"(.+?)"\*\*', manuscript)
+                ch_title = match.group(1) if match else "Unknown Chapter"
+                return f"## {ch_title}\n\nThis is the mock-generated content for the chapter."
+
+        mock_expander = MockExpander()
+        auto_sample = autonomous_generation("Auto Book", "", "Chapter 1,Chapter 2", "Test autonomous", {}, expander=mock_expander)
+
+        if "## Chapter 1" in auto_sample and "## Chapter 2" in auto_sample and "mock-generated content" in auto_sample:
+            print("Test 3 (Autonomous Generation Logic): PASSED")
+        else:
+            print("Test 3 (Autonomous Generation Logic): FAILED")
+            # print(f"Generated autonomous sample:\n{auto_sample}") # for debugging
+            sys.exit(1)
+
+        print("\nAll CLI self-checks finished successfully.")
 
     except Exception as e:
         print(f"CLI self-check error: {e}")
